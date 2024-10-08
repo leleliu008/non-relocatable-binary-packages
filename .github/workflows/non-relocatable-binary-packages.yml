@@ -311,6 +311,7 @@ jobs:
           done
 
           cat >> notes.md <<EOF
+          \`\`\`
 
           ## sha256sum
 
