@@ -783,19 +783,7 @@ install_the_given_package() {
 
     #########################################################################################
 
-    case $1 in
-        libtool)    PACKAGE_TYPE=2 ;;
-        lib*)       PACKAGE_TYPE=1 ;;
-        *)          PACKAGE_TYPE=2 ;;
-    esac
-
-    #########################################################################################
-
-    if [ "$PACKAGE_TYPE" = 1 ] ; then
-        PACKAGE_INSTALL_DIR="$SESSION_DIR/3rdroot"
-    else
-        PACKAGE_INSTALL_DIR="$PACKAGE_INSTALL_ROOT"
-    fi
+    PACKAGE_INSTALL_DIR="$PACKAGE_INSTALL_ROOT"
 
     #########################################################################################
 
@@ -818,36 +806,33 @@ install_the_given_package() {
     export CPPFLAGS="-I$PACKAGE_WORKING_DIR/include $CPPFLAGS"
     export LDFLAGS="-L$PACKAGE_WORKING_DIR/lib -Wl,-rpath,$PACKAGE_INSTALL_DIR/lib $LDFLAGS"
 
-    for DEPENDENT_PACKAGE_INSTALLED_DIR in "$SESSION_DIR/3rdroot" "$PACKAGE_INSTALL_ROOT"
+    if [ -d  "$PACKAGE_INSTALL_ROOT/include" ] ; then
+        CPPFLAGS="-I$PACKAGE_INSTALL_ROOT/include $CPPFLAGS"
+    fi
+
+    if [ -d  "$PACKAGE_INSTALL_ROOT/lib" ] ; then
+        LDFLAGS="-L$PACKAGE_INSTALL_ROOT/lib -Wl,-rpath,$PACKAGE_INSTALL_ROOT/lib $LDFLAGS"
+    fi
+
+    if [ -d  "$PACKAGE_INSTALL_ROOT/bin" ] ; then
+        PATH="$PACKAGE_INSTALL_ROOT/bin:$PATH"
+    fi
+
+    if [ -d  "$PACKAGE_INSTALL_ROOT/sbin" ] ; then
+        PATH="$PACKAGE_INSTALL_ROOT/sbin:$PATH"
+    fi
+
+    if [ -d          "$PACKAGE_INSTALL_ROOT/share/aclocal" ] ; then
+        ACLOCAL_PATH="$PACKAGE_INSTALL_ROOT/share/aclocal:$ACLOCAL_PATH"
+    fi
+
+    for d in lib share
     do
-        if [ -d  "$DEPENDENT_PACKAGE_INSTALLED_DIR/include" ] ; then
-            CPPFLAGS="-I$DEPENDENT_PACKAGE_INSTALLED_DIR/include $CPPFLAGS"
+        DEPENDENT_PACKAGE_PKGCONF_DIR="$PACKAGE_INSTALL_ROOT/$d/pkgconfig"
+
+        if [ -d "$DEPENDENT_PACKAGE_PKGCONF_DIR" ] ; then
+            PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$DEPENDENT_PACKAGE_PKGCONF_DIR"
         fi
-
-        if [ -d  "$DEPENDENT_PACKAGE_INSTALLED_DIR/lib" ] ; then
-            LDFLAGS="-L$DEPENDENT_PACKAGE_INSTALLED_DIR/lib -Wl,-rpath,$DEPENDENT_PACKAGE_INSTALLED_DIR/lib $LDFLAGS"
-        fi
-
-        if [ -d  "$DEPENDENT_PACKAGE_INSTALLED_DIR/bin" ] ; then
-            PATH="$DEPENDENT_PACKAGE_INSTALLED_DIR/bin:$PATH"
-        fi
-
-        if [ -d  "$DEPENDENT_PACKAGE_INSTALLED_DIR/sbin" ] ; then
-            PATH="$DEPENDENT_PACKAGE_INSTALLED_DIR/sbin:$PATH"
-        fi
-
-        if [ -d          "$DEPENDENT_PACKAGE_INSTALLED_DIR/share/aclocal" ] ; then
-            ACLOCAL_PATH="$DEPENDENT_PACKAGE_INSTALLED_DIR/share/aclocal:$ACLOCAL_PATH"
-        fi
-
-        for d in lib share
-        do
-            DEPENDENT_PACKAGE_PKGCONF_DIR="$DEPENDENT_PACKAGE_INSTALLED_DIR/$d/pkgconfig"
-
-            if [ -d "$DEPENDENT_PACKAGE_PKGCONF_DIR" ] ; then
-                PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$DEPENDENT_PACKAGE_PKGCONF_DIR"
-            fi
-        done
     done
 
     #########################################################################################
@@ -1024,10 +1009,8 @@ package_info_perl_XML_Parser() {
     PACKAGE_SRC_SHA='ad4aae643ec784f489b956abe952432871a622d4e2b5c619e8855accbfc4d1d8'
     PACKAGE_DEP_PKG='perl libexpat'
     PACKAGE_DOPATCH='
-run install -d "$PACKAGE_INSTALL_DIR/lib/"
-run cp -L $SESSION_DIR/3rdroot/lib/libexpat.* $PACKAGE_INSTALL_DIR/lib/
 run export EXPATLIBPATH="$PACKAGE_INSTALL_DIR/lib"
-run export EXPATINCPATH="$SESSION_DIR/3rdroot/include"
+run export EXPATINCPATH="$PACKAGE_INSTALL_DIR/include"
 '
     PACKAGE_INSTALL='run perl Makefile.PL && run "$GMAKE" "--jobs=$BUILD_NJOBS" && run "$GMAKE" install'
 }
@@ -1053,7 +1036,7 @@ package_info_python3() {
     PACKAGE_SRC_URL='https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz'
     PACKAGE_SRC_SHA='e7de3240a8bc2b1e1ba5c81bf943f06861ff494b69fda990ce2722a504c6153d'
     PACKAGE_DEP_PKG='libz libbz2 liblzma libgdbm libexpat libsqlite3 libffi libopenssl perl'
-    PACKAGE_INSTALL='configure --with-system-expat --with-system-ffi --with-openssl=$SESSION_DIR/3rdroot --with-ensurepip=yes --with-lto --enable-ipv6 --enable-shared --enable-largefile --disable-option-checking --disable-nls --disable-debug --enable-loadable-sqlite-extensions --disable-profiling'
+    PACKAGE_INSTALL='configure --with-system-expat --with-system-ffi --with-openssl=$PACKAGE_INSTALL_DIR --with-ensurepip=yes --with-lto --enable-ipv6 --enable-shared --enable-largefile --disable-option-checking --disable-nls --disable-debug --enable-loadable-sqlite-extensions --disable-profiling'
     PACKAGE_DOPATCH='
 unset PYTHONHOME
 unset PYTHONPATH
