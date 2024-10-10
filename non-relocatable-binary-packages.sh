@@ -84,7 +84,7 @@ __setup_linux() {
 __build_and_pack() {
     run $sudo install -d -g `id -g -n` -o `id -u -n` "$1"
 
-    run ./xbuilder install automake libtool texinfo help2man intltool swig libxcrypt $PKG --prefix="$1"
+    run ./xbuilder install automake libtool texinfo help2man intltool swig $PKG --prefix="$1"
 
     run bsdtar cvaPf "${1##*/}.tar.xz" "$1"
 }
@@ -103,7 +103,10 @@ case $2 in
     openbsd-7.[0-4]-amd64)
         PKG=
         ;;
-    *)  PKG=python3
+    linux-glib-*)
+        PKG='python3 libxcrypt'
+        ;;
+    *)  PKG='python3'
 esac
 
 __build_and_pack "/opt/non-relocatable-binary-packages-$1-$2"
