@@ -965,6 +965,7 @@ package_info_libxcrypt() {
     PACKAGE_SRC_URL='https://github.com/besser82/libxcrypt/releases/download/v4.4.36/libxcrypt-4.4.36.tar.xz'
     PACKAGE_SRC_SHA='e5e1f4caee0a01de2aee26e3138807d6d3ca2b8e67287966d1fefd65e1fd8943'
     PACKAGE_DEP_PKG='perl'
+    PACKAGE_DOPATCH='export LDFLAGS="$LDFLAGS -Wl,--undefined-version"'
     PACKAGE_INSTALL='configure --disable-dependency-tracking --disable-obsolete-api --disable-xcrypt-compat-files --disable-failure-tokens --disable-valgrind'
 }
 
