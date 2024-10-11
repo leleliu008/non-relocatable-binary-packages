@@ -1,1 +1,1 @@
-# non-relocatable-prebuild-packages
+# non-relocatable-binary-packages
