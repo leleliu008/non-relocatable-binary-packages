@@ -105,11 +105,15 @@ case $2 in
     *)  PKG='python3'
 esac
 
-__build_and_pack "/opt/non-relocatable-binary-packages-$1-$2"
+PREFIX="/opt/non-relocatable-binary-packages-$1-$2"
+
+__build_and_pack "$PREFIX"
 
 case $2 in
     linux-glibc-*)
-        run cp -L `gcc -print-file-name=libcrypt.so.1` "/opt/non-relocatable-binary-packages-$1-$2/lib/"
-        LIBPERL_DIR="$(patchelf --print-rpath          "/opt/non-relocatable-binary-packages-$1-$2/bin/perl")"
-        run patchelf --set-rpath "/opt/non-relocatable-binary-packages-$1-$2/lib" "$LIBPERL_DIR/libperl.so"
+        run cp -L `gcc -print-file-name=libcrypt.so.1` "$PREFIX/lib/"
+        LIBPERL_DIR="$(patchelf --print-rpath          "$PREFIX/bin/perl")"
+        LIBPERL_PATH="$LIBPERL_DIR/libperl.so"
+        run chmod +w "$LIBPERL_PATH"
+        run patchelf --set-rpath "$PREFIX/lib" "$LIBPERL_PATH"
 esac
