@@ -964,8 +964,7 @@ package_info_libopenssl() {
 package_info_libxcrypt() {
     PACKAGE_SRC_URL='https://github.com/besser82/libxcrypt/releases/download/v4.4.36/libxcrypt-4.4.36.tar.xz'
     PACKAGE_SRC_SHA='e5e1f4caee0a01de2aee26e3138807d6d3ca2b8e67287966d1fefd65e1fd8943'
-    PACKAGE_DEP_PKG='perl'
-    PACKAGE_INSTALL='configure --disable-dependency-tracking --enable-obsolete-api=glibc --disable-xcrypt-compat-files --disable-failure-tokens --disable-valgrind'
+    PACKAGE_INSTALL='configure --disable-dependency-tracking --enable-static --disable-shared --enable-obsolete-api=glibc --disable-xcrypt-compat-files --disable-failure-tokens --disable-valgrind'
 }
 
 package_info_perl() {
@@ -973,6 +972,9 @@ package_info_perl() {
     PACKAGE_SRC_URI='https://distfiles.macports.org/perl5.38/perl-5.38.2.tar.xz'
     PACKAGE_SRC_SHA='d91115e90b896520e83d4de6b52f8254ef2b70a8d545ffab33200ea9f1cf29e8'
     PACKAGE_INSTALL='run ./Configure "-Dprefix=$PACKAGE_INSTALL_DIR" -Dman1dir=none -Dman3dir=none -des -Dmake=gmake -Duselargefiles -Duseshrplib -Dusethreads -Dusenm=false -Dusedl=true && run "$GMAKE" "--jobs=$BUILD_NJOBS" && run "$GMAKE" install'
+    if [ "$NATIVE_OS_KIND" = linux ] ; then
+        PACKAGE_DEP_PKG='libxcrypt'
+    fi
 }
 
 package_info_texinfo() {
