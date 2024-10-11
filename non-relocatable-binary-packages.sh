@@ -102,10 +102,12 @@ __setup_${2%%-*}
 case $2 in
     openbsd-7.[0-4]-amd64)
         PKG='' ;;
-    linux-glibc-*)
-        PKG='python3 libxcrypt'
-        ;;
     *)  PKG='python3'
 esac
 
 __build_and_pack "/opt/non-relocatable-binary-packages-$1-$2"
+
+case $2 in
+    linux-glibc-*)
+        run cp -L `gcc -print-file-name=libcrypt.so.1` "/opt/non-relocatable-binary-packages-$1-$2/lib/"
+esac
