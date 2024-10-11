@@ -71,7 +71,7 @@ __setup_linux() {
     case $ID in
         ubuntu)
             run apt-get -y update
-            run apt-get -y install curl libarchive-tools cmake make pkg-config g++ linux-headers-generic
+            run apt-get -y install curl libarchive-tools cmake make pkg-config g++ linux-headers-generic patchelf
 
             run ln -sf /usr/bin/make /usr/bin/gmake
             ;;
@@ -110,4 +110,6 @@ __build_and_pack "/opt/non-relocatable-binary-packages-$1-$2"
 case $2 in
     linux-glibc-*)
         run cp -L `gcc -print-file-name=libcrypt.so.1` "/opt/non-relocatable-binary-packages-$1-$2/lib/"
+        LIBPERL_DIR="$(patchelf --print-rpath          "/opt/non-relocatable-binary-packages-$1-$2/bin/perl")"
+        run patchelf --set-rpath "/opt/non-relocatable-binary-packages-$1-$2/lib" "$LIBPERL_DIR/libperl.so"
 esac
