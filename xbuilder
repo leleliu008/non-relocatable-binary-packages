@@ -964,6 +964,7 @@ package_info_libopenssl() {
 package_info_libxcrypt() {
     PACKAGE_SRC_URL='https://github.com/besser82/libxcrypt/releases/download/v4.4.36/libxcrypt-4.4.36.tar.xz'
     PACKAGE_SRC_SHA='e5e1f4caee0a01de2aee26e3138807d6d3ca2b8e67287966d1fefd65e1fd8943'
+    PACKAGE_DOPATCH='export LDFLAGS="$LDFLAGS -static"'
     PACKAGE_INSTALL='configure --disable-dependency-tracking --enable-static --disable-shared --enable-obsolete-api=glibc --disable-xcrypt-compat-files --disable-failure-tokens --disable-valgrind'
 }
 
@@ -1072,6 +1073,7 @@ package_info_swig() {
     PACKAGE_SRC_URL='https://downloads.sourceforge.net/project/swig/swig/swig-4.1.1/swig-4.1.1.tar.gz'
     PACKAGE_SRC_SHA='2af08aced8fcd65cdb5cc62426768914bedc735b1c250325203716f78e39ac9b'
     PACKAGE_DEP_PKG='libpcre2'
+    PACKAGE_DOPATCH='export LDFLAGS="$LDFLAGS -static-libstdc++ -static-libgcc"'
     PACKAGE_INSTALL='configure --enable-ccache --enable-cpp11-testing --with-popen --with-pcre --without-boost --without-android --without-java --without-javascript --without-python --without-perl5 --without-ruby --without-php --without-tcl --without-guile --without-octave --without-scilab --without-ocaml --without-mzscheme --without-csharp --without-lua --without-r --without-d --without-go'
 }
 
