@@ -893,7 +893,7 @@ src-sha: $PACKAGE_SRC_SHA
 dep-pkg: $PACKAGE_DEP_PKG
 install: $PACKAGE_INSTALL
 builtat: $PACKAGE_INSTALL_UTS
-builtby: xbuilder-$RUNTIME_BUILDER_VERSION
+builtby: xbuilder-$XBUILDER_VERSION
 EOF
 }
 
@@ -1212,14 +1212,14 @@ ${COLOR_GREEN}xbuilder exec [--prefix=<DIR>] <CMD>${COLOR_OFF}
 "
 }
 
-RUNTIME_BUILDER_VERSION=3.0.0
+XBUILDER_VERSION=3.0.0
 
 case $1 in
     ''|--help|-h)
         help
         ;;
     --version|-V)
-        printf '%s\n' "$RUNTIME_BUILDER_VERSION"
+        printf '%s\n' "$XBUILDER_VERSION"
         ;;
     ls-available)
         PACKAGE_NAMES='libz libbz2 liblzma libpcre2 libsqlite3 libopenssl libexpat libgdbm libffi libyaml ruby perl python3 texinfo help2man intltool libtool autoconf automake swig perl-XML-Parser pkgconf patch gmake gm4'
