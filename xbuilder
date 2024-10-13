@@ -293,13 +293,7 @@ inspect_install_arguments() {
 
     unset ENABLE_LTO
 
-    unset ENABLE_STRIP
-
-    unset ENABLE_CCACHE
-
     unset REQUEST_TO_KEEP_SESSION_DIR
-
-    unset REQUEST_TO_UPGRADE_IF_POSSIBLE
 
     unset REQUEST_TO_EXPORT_COMPILE_COMMANDS_JSON
 
@@ -307,48 +301,45 @@ inspect_install_arguments() {
 
     unset SESSION_DIR
     unset DOWNLOAD_DIR
-    unset PACKAGE_INSTALL_ROOT
+    unset PACKAGE_INSTALL_DIR
 
     unset DUMP_ENV
     unset DUMP_HTTP
-    unset DUMP_UPPM
 
     unset VERBOSE_GMAKE
     unset VERBOSE_CMAKE
 
     unset DEBUG_CC
     unset DEBUG_LD
-    unset DEBUG_GO
-    unset DEBUG_CARGO
+
     unset DEBUG_GMAKE
     unset DEBUG_CMAKE
-    unset DEBUG_XMAKE
     unset DEBUG_PKG_CONFIG
 
     while [ -n "$1" ]
     do
         case $1 in
+            -x) set -x ;;
             -q) LOG_LEVEL=0 ;;
             -v) LOG_LEVEL=2
 
                 DUMP_ENV=1
                 DUMP_HTTP=1
-                DUMP_UPPM=1
 
                 VERBOSE_GMAKE=1
                 VERBOSE_CMAKE=1
                 ;;
-            -x) LOG_LEVEL=3
+            -vv)LOG_LEVEL=3
 
                 DUMP_ENV=1
                 DUMP_HTTP=1
-                DUMP_UPPM=1
 
                 VERBOSE_GMAKE=1
                 VERBOSE_CMAKE=1
 
                 DEBUG_CC=1
                 DEBUG_LD=1
+
                 DEBUG_GMAKE=1
                 DEBUG_CMAKE=1
                 DEBUG_PKG_CONFIG=1
@@ -359,22 +350,16 @@ inspect_install_arguments() {
             -v-http)
                 DUMP_HTTP=1
                 ;;
-            -v-uppm)
-                DUMP_UPPM=1
-                ;;
             -v-gmake)
                 VERBOSE_GMAKE=1
                 ;;
             -v-cmake)
                 VERBOSE_CMAKE=1
                 ;;
-            -x-sh)
-                set -x
-                ;;
-            -x-cc)
+            -v-cc)
                 DEBUG_CC=1
                 ;;
-            -x-ld)
+            -v-ld)
                 DEBUG_LD=1
                 ;;
             -x-gmake)
@@ -385,23 +370,6 @@ inspect_install_arguments() {
                 ;;
             -x-pkg-config)
                 DEBUG_PKG_CONFIG=1
-                ;;
-
-            --disable-ccache)
-                ENABLE_CCACHE=0
-                ;;
-            --enable-lto)
-                ENABLE_LTO=1
-                ;;
-            --enable-strip)
-                ENABLE_STRIP=all
-                ;;
-            --enable-strip=*)
-                ENABLE_STRIP="${1#*=}"
-                case $ENABLE_STRIP in
-                    no|all|debug|unneeded) ;;
-                    *)  abort 1 "--strip=<VALUE>, VALUE must be one of no, all, debug, unneeded"
-                esac
                 ;;
             --profile=*)
                 PROFILE="${1#*=}"
@@ -423,11 +391,11 @@ inspect_install_arguments() {
                 esac
                 ;;
             --prefix=*)
-                PACKAGE_INSTALL_ROOT="${1#*=}"
+                PACKAGE_INSTALL_DIR="${1#*=}"
 
-                case $PACKAGE_INSTALL_ROOT in
+                case $PACKAGE_INSTALL_DIR in
                     /*) ;;
-                    *)  PACKAGE_INSTALL_ROOT="$PWD/$PACKAGE_INSTALL_ROOT"
+                    *)  PACKAGE_INSTALL_DIR="$PWD/$PACKAGE_INSTALL_DIR"
                 esac
                 ;;
             -j) shift
@@ -435,7 +403,6 @@ inspect_install_arguments() {
                 BUILD_NJOBS="$1"
                 ;;
             -K) REQUEST_TO_KEEP_SESSION_DIR=1 ;;
-            -U) REQUEST_TO_UPGRADE_IF_POSSIBLE=1 ;;
             -E) REQUEST_TO_EXPORT_COMPILE_COMMANDS_JSON=1 ;;
 
             -*) abort 1 "unrecognized option: $1"
@@ -452,7 +419,7 @@ inspect_install_arguments() {
 
     : ${SESSION_DIR:="$HOME/.xbuilder/run/$$"}
     : ${DOWNLOAD_DIR:="$HOME/.xbuilder/downloads"}
-    : ${PACKAGE_INSTALL_ROOT:="$HOME/.xbuilder/installed"}
+    : ${PACKAGE_INSTALL_DIR:="$HOME/.xbuilder/installed"}
 
     #########################################################################################
 
@@ -484,14 +451,15 @@ inspect_install_arguments() {
 
     #########################################################################################
 
-    if [ -z "$ENABLE_STRIP" ] ; then
-        case $PROFILE in
-            debug)   ENABLE_STRIP=no  ;;
-            release) ENABLE_STRIP=all ;;
-        esac
+    if [ -z "$GMAKE" ] ; then
+        GMAKE="$(command -v gmake || command -v make)" || abort 1 "command not found: gmake"
     fi
 
     #########################################################################################
+
+    unset CC_ARGS
+    unset PP_ARGS
+    unset LD_ARGS
 
     if [ "$NATIVE_OS_KIND" = 'darwin' ] ; then
         [ -z "$CC"      ] &&      CC="$(xcrun --sdk macosx --find clang)"
@@ -504,10 +472,9 @@ inspect_install_arguments() {
 
         NATIVE_OS_VERS="$(sw_vers -productVersion)"
 
-          CFLAGS="-isysroot $SYSROOT -mmacosx-version-min=$NATIVE_OS_VERS -arch $NATIVE_OS_ARCH -Qunused-arguments"
-        CXXFLAGS="-isysroot $SYSROOT -mmacosx-version-min=$NATIVE_OS_VERS -arch $NATIVE_OS_ARCH -Qunused-arguments"
-        CPPFLAGS="-isysroot $SYSROOT -Qunused-arguments"
-         LDFLAGS="-isysroot $SYSROOT -mmacosx-version-min=$NATIVE_OS_VERS -arch $NATIVE_OS_ARCH"
+        CC_ARGS="-isysroot $SYSROOT -mmacosx-version-min=$NATIVE_OS_VERS -arch $NATIVE_OS_ARCH -Qunused-arguments"
+        PP_ARGS="-isysroot $SYSROOT -Qunused-arguments"
+        LD_ARGS="-isysroot $SYSROOT -mmacosx-version-min=$NATIVE_OS_VERS -arch $NATIVE_OS_ARCH"
     else
         [ -z "$CC" ] && {
              CC="$(command -v cc  || command -v clang   || command -v gcc)" || abort 1 "C Compiler not found."
@@ -533,11 +500,10 @@ inspect_install_arguments() {
             RANLIB="$(command -v ranlib)" || abort 1 "command not found: ranlib"
         }
 
-          CFLAGS="-fPIC -fno-common"
-        CXXFLAGS="-fPIC -fno-common"
-        CPPFLAGS=
+        CC_ARGS="-fPIC -fno-common"
+
         # https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html
-         LDFLAGS="-Wl,--as-needed -Wl,-z,muldefs -Wl,--allow-multiple-definition"
+        LD_ARGS="-Wl,--as-needed -Wl,-z,muldefs -Wl,--allow-multiple-definition"
     fi
 
     #########################################################################################
@@ -547,41 +513,50 @@ inspect_install_arguments() {
     #########################################################################################
 
     if [ "$DEBUG_CC" = 1 ] ; then
-          CFLAGS="$CFLAGS   -v"
-        CXXFLAGS="$CXXFLAGS -v"
+        CC_ARGS="$CC_ARGS -v"
     fi
 
     if [ "$DEBUG_LD" = 1 ] ; then
-         LDFLAGS="$LDFLAGS -Wl,-v"
+         LD_ARGS="$LD_ARGS -Wl,-v"
     fi
 
     case $PROFILE in
         debug)
-              CFLAGS="$CFLAGS   -O0 -g"
-            CXXFLAGS="$CXXFLAGS -O0 -g"
+            CC_ARGS="$CC_ARGS -O0 -g"
             ;;
         release)
-              CFLAGS="$CCFLAGS -Os"
-            CXXFLAGS="$XXFLAGS -Os"
+            CC_ARGS="$CC_ARGS -Os"
 
             if [ "$ENABLE_LTO" = 1 ] ; then
-                LDFLAGS="$LDFLAGS -flto"
+                LD_ARGS="$LD_ARGS -flto"
             fi
 
             if [ "$NATIVE_OS_KIND" = darwin ] ; then
-                LDFLAGS="$LDFLAGS -Wl,-S"
+                LD_ARGS="$LD_ARGS -Wl,-S"
             else
-                case $ENABLE_STRIP in
-                    all)   LDFLAGS="$LDFLAGS -Wl,-s" ;;
-                    debug) LDFLAGS="$LDFLAGS -Wl,-S" ;;
-                esac
+                LD_ARGS="$LD_ARGS -Wl,-s"
             fi
     esac
 
     case $NATIVE_OS_KIND in
-        netbsd)  LDFLAGS="$LDFLAGS -lpthread" ;;
-        openbsd) LDFLAGS="$LDFLAGS -lpthread" ;;
+        netbsd)  LD_ARGS="$LD_ARGS -lpthread" ;;
+        openbsd) LD_ARGS="$LD_ARGS -lpthread" ;;
     esac
+
+    #########################################################################################
+
+    PATH="$PACKAGE_INSTALL_DIR/bin:$PATH"
+
+    PP_ARGS="$PP_ARGS -I$PACKAGE_INSTALL_DIR/include"
+
+    LD_ARGS="$LD_ARGS -L$PACKAGE_INSTALL_DIR/lib -Wl,-rpath,$PACKAGE_INSTALL_DIR/lib"
+
+    #########################################################################################
+
+      CFLAGS="$CC_ARGS   $CFLAGS"
+    CXXFLAGS="$CC_ARGS $CXXFLAGS"
+    CPPFLAGS="$PP_ARGS $CPPFLAGS"
+     LDFLAGS="$LD_ARGS  $LDFLAGS"
 
     #########################################################################################
 
@@ -589,6 +564,12 @@ inspect_install_arguments() {
     do
         export "${TOOL}"
     done
+
+    #########################################################################################
+
+    export PKG_CONFIG_LIBDIR="$PACKAGE_INSTALL_DIR/lib/pkgconfig"
+    export PKG_CONFIG_PATH="$PACKAGE_INSTALL_DIR/lib/pkgconfig"
+    export ACLOCAL_PATH="$PACKAGE_INSTALL_DIR/share/aclocal"
 
     #########################################################################################
 
@@ -691,20 +672,6 @@ inspect_install_arguments() {
     else
         CMAKE_FIND_DEBUG_MODE=OFF
     fi
-
-    #########################################################################################
-
-    [ -d "$SESSION_DIR" ] || run install -d "$SESSION_DIR"
-
-    cat > "$SESSION_DIR/toolchain.txt" <<EOF
-     CC='$CC'
-    CXX='$CXX'
-     AS='$AS'
-     LD='$LD'
-     AR='$AR'
- RANLIB='$RANLIB'
-SYSROOT='$SYSROOT'
-EOF
 }
 
 cmakew() {
@@ -784,57 +751,10 @@ install_the_given_package() {
 
     #########################################################################################
 
-    PACKAGE_INSTALL_DIR="$PACKAGE_INSTALL_ROOT"
-
-    #########################################################################################
-
     if [ -f "$PACKAGE_INSTALL_DIR/$1.yml" ] ; then
         note "package '$1' already has been installed, skipped."
         return 0
     fi
-
-    #########################################################################################
-
-    PACKAGE_WORKING_DIR="$SESSION_DIR/$1"
-
-    #########################################################################################
-
-    # override the default search directory (usually /usr/lib/pkgconfig:/usr/share/pkgconfig)
-    # because we only want to use our own
-    export PKG_CONFIG_LIBDIR="$PACKAGE_WORKING_DIR/lib/pkgconfig"
-    export PKG_CONFIG_PATH="$PACKAGE_WORKING_DIR/lib/pkgconfig"
-    export ACLOCAL_PATH="$PACKAGE_WORKING_DIR/share/aclocal"
-    export CPPFLAGS="-I$PACKAGE_WORKING_DIR/include $CPPFLAGS"
-    export LDFLAGS="-L$PACKAGE_WORKING_DIR/lib -Wl,-rpath,$PACKAGE_INSTALL_DIR/lib $LDFLAGS"
-
-    if [ -d  "$PACKAGE_INSTALL_ROOT/include" ] ; then
-        CPPFLAGS="-I$PACKAGE_INSTALL_ROOT/include $CPPFLAGS"
-    fi
-
-    if [ -d  "$PACKAGE_INSTALL_ROOT/lib" ] ; then
-        LDFLAGS="-L$PACKAGE_INSTALL_ROOT/lib -Wl,-rpath,$PACKAGE_INSTALL_ROOT/lib $LDFLAGS"
-    fi
-
-    if [ -d  "$PACKAGE_INSTALL_ROOT/bin" ] ; then
-        PATH="$PACKAGE_INSTALL_ROOT/bin:$PATH"
-    fi
-
-    if [ -d  "$PACKAGE_INSTALL_ROOT/sbin" ] ; then
-        PATH="$PACKAGE_INSTALL_ROOT/sbin:$PATH"
-    fi
-
-    if [ -d          "$PACKAGE_INSTALL_ROOT/share/aclocal" ] ; then
-        ACLOCAL_PATH="$PACKAGE_INSTALL_ROOT/share/aclocal:$ACLOCAL_PATH"
-    fi
-
-    for d in lib share
-    do
-        DEPENDENT_PACKAGE_PKGCONF_DIR="$PACKAGE_INSTALL_ROOT/$d/pkgconfig"
-
-        if [ -d "$DEPENDENT_PACKAGE_PKGCONF_DIR" ] ; then
-            PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$DEPENDENT_PACKAGE_PKGCONF_DIR"
-        fi
-    done
 
     #########################################################################################
 
@@ -845,6 +765,10 @@ install_the_given_package() {
     #########################################################################################
 
     wfetch "$PACKAGE_SRC_URL" --uri="$PACKAGE_SRC_URI" --sha256="$PACKAGE_SRC_SHA" -o "$PACKAGE_SRC_FILEPATH"
+
+    #########################################################################################
+
+    PACKAGE_WORKING_DIR="$SESSION_DIR/$1"
 
     #########################################################################################
 
@@ -863,6 +787,12 @@ install_the_given_package() {
 
     if [ -n  "$PACKAGE_DOPATCH" ] ; then
         eval "$PACKAGE_DOPATCH"
+    fi
+
+    #########################################################################################
+
+    if [ "$DUMP_ENV" = 1 ] ; then
+        run export -p
     fi
 
     #########################################################################################
@@ -1048,20 +978,20 @@ package_info_python3() {
 unset PYTHONHOME
 unset PYTHONPATH
 
-export ZLIB_CFLAGS="-I$PACKAGE_INSTALL_ROOT/libz/include"
-export ZLIB_LIBS="-L$PACKAGE_INSTALL_ROOT/libz/lib -lz"
+export ZLIB_CFLAGS="-I$PACKAGE_INSTALL_DIR/libz/include"
+export ZLIB_LIBS="-L$PACKAGE_INSTALL_DIR/libz/lib -lz"
 
-export BZIP2_CFLAGS="-I$PACKAGE_INSTALL_ROOT/libbz2/include"
-export BZIP2_LIBS="-L$PACKAGE_INSTALL_ROOT/libbz2/lib -lbz2"
+export BZIP2_CFLAGS="-I$PACKAGE_INSTALL_DIR/libbz2/include"
+export BZIP2_LIBS="-L$PACKAGE_INSTALL_DIR/libbz2/lib -lbz2"
 
-export LIBLZMA_CFLAGS="-I$PACKAGE_INSTALL_ROOT/liblzma/include"
-export LIBLZMA_LIBS="-L$PACKAGE_INSTALL_ROOT/liblzma/lib -llzma"
+export LIBLZMA_CFLAGS="-I$PACKAGE_INSTALL_DIR/liblzma/include"
+export LIBLZMA_LIBS="-L$PACKAGE_INSTALL_DIR/liblzma/lib -llzma"
 
-export LIBSQLITE3_CFLAGS="-I$PACKAGE_INSTALL_ROOT/libsqlite3/include"
-export LIBSQLITE3_LIBS="-L$PACKAGE_INSTALL_ROOT/libsqlite3/lib -lsqlite3"
+export LIBSQLITE3_CFLAGS="-I$PACKAGE_INSTALL_DIR/libsqlite3/include"
+export LIBSQLITE3_LIBS="-L$PACKAGE_INSTALL_DIR/libsqlite3/lib -lsqlite3"
 
-export GDBM_CFLAGS="-I$PACKAGE_INSTALL_ROOT/libgdbm/include"
-export GDBM_LIBS="-L$PACKAGE_INSTALL_ROOT/libgdbm/lib -lgdbm -lgdbm_compat"
+export GDBM_CFLAGS="-I$PACKAGE_INSTALL_DIR/libgdbm/include"
+export GDBM_LIBS="-L$PACKAGE_INSTALL_DIR/libgdbm/lib -lgdbm -lgdbm_compat"
 
 export LIBS=-lm'
 }
@@ -1091,29 +1021,11 @@ package_info_gmake() {
     PACKAGE_DOTWEAK='run ln -s gmake bin/make'
 }
 
-package_info_patch() {
-    PACKAGE_SRC_URL='https://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.xz'
-    PACKAGE_SRC_SHA='ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd'
-    PACKAGE_INSTALL='configure --disable-dependency-tracking --disable-gcc-warnings'
-}
-
 package_info_pkgconf() {
     PACKAGE_SRC_URL='https://distfiles.ariadne.space/pkgconf/pkgconf-2.3.0.tar.xz'
     PACKAGE_SRC_SHA='3a9080ac51d03615e7c1910a0a2a8df08424892b5f13b0628a204d3fcce0ea8b'
     PACKAGE_INSTALL='configure'
     PACKAGE_DOTWEAK='run ln -s pkgconf bin/pkg-config'
-}
-
-package_info_findutils() {
-    PACKAGE_SRC_URL='https://ftp.gnu.org/gnu/findutils/findutils-4.9.0.tar.xz'
-    PACKAGE_SRC_SHA='a2bfb8c09d436770edc59f50fa483e785b161a3b7b9d547573cb08065fd462fe'
-    PACKAGE_INSTALL='configure --disable-assert --without-selinux --with-included-regex'
-}
-
-package_info_diffutils() {
-    PACKAGE_SRC_URL='https://ftp.gnu.org/gnu/diffutils/diffutils-3.10.tar.xz'
-    PACKAGE_SRC_SHA='90e5e93cc724e4ebe12ede80df1634063c7a855692685919bfe60b556c9bd09e'
-    PACKAGE_INSTALL='configure --with-included-regex --disable-gcc-warnings'
 }
 
 
@@ -1150,17 +1062,14 @@ ${COLOR_GREEN}xbuilder install <PACKAGE-NAME>... [OPTIONS]${COLOR_OFF}
         ${COLOR_BLUE}-j <N>${COLOR_OFF}
             specify the number of jobs you can run in parallel.
 
-        ${COLOR_BLUE}--flat${COLOR_OFF}
-            install packages into --prefix=<DIR> rather than --prefix=<DIR>/<PACKAGE-NAME>
-
         ${COLOR_BLUE}-E${COLOR_OFF}
             export compile_commands.json
 
-        ${COLOR_BLUE}-U${COLOR_OFF}
-            upgrade packages if possible.
-
         ${COLOR_BLUE}-K${COLOR_OFF}
             keep the session directory even if this packages are successfully installed.
+
+        ${COLOR_BLUE}-x${COLOR_OFF}
+            debug current running shell.
 
         ${COLOR_BLUE}-q${COLOR_OFF}
             silent mode. no any messages will be output to terminal.
@@ -1170,10 +1079,10 @@ ${COLOR_GREEN}xbuilder install <PACKAGE-NAME>... [OPTIONS]${COLOR_OFF}
 
             This option is equivalent to -v-* options all are supplied.
 
-        ${COLOR_BLUE}-x${COLOR_OFF}
+        ${COLOR_BLUE}-vv${COLOR_OFF}
             very verbose mode. many many messages will be output to terminal.
 
-            This option is equivalent to -v-* and -x-* options all are supplied.
+            This option is equivalent to -v-* options all are supplied.
 
         ${COLOR_BLUE}-v-env${COLOR_OFF}
             show all environment variables before starting to build.
@@ -1181,23 +1090,17 @@ ${COLOR_GREEN}xbuilder install <PACKAGE-NAME>... [OPTIONS]${COLOR_OFF}
         ${COLOR_BLUE}-v-http${COLOR_OFF}
             show http request/response.
 
-        ${COLOR_BLUE}-v-uppm${COLOR_OFF}
-            pass -v argument to uppm command.
-
         ${COLOR_BLUE}-v-gmake${COLOR_OFF}
             pass V=1 argument to gmake command.
 
         ${COLOR_BLUE}-v-cmake${COLOR_OFF}
             pass -DCMAKE_VERBOSE_MAKEFILE=ON argument to cmake command.
 
-        ${COLOR_BLUE}-x-sh${COLOR_OFF}
-            set -x to debug current running shell.
+        ${COLOR_BLUE}-v-cc${COLOR_OFF}
+            pass -v argument to the C/C++ compiler.
 
-        ${COLOR_BLUE}-x-cc${COLOR_OFF}
-            pass -v argument to clang command.
-
-        ${COLOR_BLUE}-x-ld${COLOR_OFF}
-            pass -Wl,-v argument to linker.
+        ${COLOR_BLUE}-v-ld${COLOR_OFF}
+            pass -v argument to the linker.
 
         ${COLOR_BLUE}-x-gmake${COLOR_OFF}
             pass --debug argument to gmake command.
@@ -1207,9 +1110,6 @@ ${COLOR_GREEN}xbuilder install <PACKAGE-NAME>... [OPTIONS]${COLOR_OFF}
 
         ${COLOR_BLUE}-x-pkg-config${COLOR_OFF}
             export PKG_CONFIG_DEBUG_SPEW=1
-
-${COLOR_GREEN}xbuilder exec [--prefix=<DIR>] <CMD>${COLOR_OFF}
-    execute command in environment.
 "
 }
 
@@ -1223,7 +1123,7 @@ case $1 in
         printf '%s\n' "$XBUILDER_VERSION"
         ;;
     ls-available)
-        PACKAGE_NAMES='libz libbz2 liblzma libpcre2 libsqlite3 libopenssl libexpat libgdbm libffi libyaml ruby perl python3 texinfo help2man intltool libtool autoconf automake swig perl-XML-Parser pkgconf patch gmake gm4'
+        PACKAGE_NAMES='libz libbz2 liblzma libpcre2 libsqlite3 libopenssl libexpat libgdbm libffi libyaml ruby perl python3 texinfo help2man intltool libtool autoconf automake swig perl-XML-Parser pkgconf gmake gm4'
 
         if [ "$2" = -v ] ; then
             for PACKAGE_NAME in $PACKAGE_NAMES
@@ -1254,10 +1154,6 @@ EOF
         fi
         ;;
     install)
-        if [ -z "$GMAKE" ] ; then
-            GMAKE="$(command -v gmake || command -v make)" || abort 1 "command not found: gmake"
-        fi
-
         shift
 
         inspect_install_arguments "$@"
@@ -1266,62 +1162,22 @@ EOF
         do
             install_the_given_package "$PACKAGE_NAME"
         done
-        ;;
-    exec)
-        shift
 
-        case $1 in
-            '') abort 1 'xbuilder exec <CMD> , <CMD> is unspecified.'
-                ;;
-            --prefix=*)
-                PACKAGE_INSTALL_ROOT="${1#*=}"
+        cat > "$PACKAGE_INSTALL_DIR/toolchain.txt" <<EOF
+     CC='$CC'
+    CXX='$CXX'
+     AS='$AS'
+     LD='$LD'
+     AR='$AR'
+ RANLIB='$RANLIB'
+SYSROOT='$SYSROOT'
+ CFLAGS='$CFLAGS'
+LDFLAGS='$LDFLAGS'
+EOF
 
-                case $PACKAGE_INSTALL_ROOT in
-                    '') abort 1 "directory $PACKAGE_INSTALL_ROOT does not exist."
-                        ;;
-                    /*) ;;
-                    *)  PACKAGE_INSTALL_ROOT="$PWD/$PACKAGE_INSTALL_ROOT"
-                esac
-
-                shift
-
-                [ -z "$1" ] && abort 1 'xbuilder exec --prefix=<DIR> <CMD> , <CMD> is unspecified.'
-                ;;
-        esac
-
-        if [ -z "$PACKAGE_INSTALL_ROOT" ] ; then
-            [ -z "$HOME" ] && abort 1 'HOME environment is not set.'
-
-            PACKAGE_INSTALL_ROOT="$HOME/.xbuilder/installed"
+        if [ "$REQUEST_TO_KEEP_SESSION_DIR" != 1 ] ; then
+            rm -rf "$SESSION_DIR"
         fi
-
-        if [ -d  "$PACKAGE_INSTALL_ROOT/include" ] ; then
-            CPPFLAGS="-I$PACKAGE_INSTALL_ROOT/include $CPPFLAGS"
-        fi
-
-        if [ -d  "$PACKAGE_INSTALL_ROOT/lib" ] ; then
-            LDFLAGS="-L$PACKAGE_INSTALL_ROOT/lib -Wl,-rpath,$PACKAGE_INSTALL_ROOT/lib $LDFLAGS"
-        fi
-
-        if [ -d  "$PACKAGE_INSTALL_ROOT/bin" ] ; then
-            PATH="$PACKAGE_INSTALL_ROOT/bin:$PATH"
-        fi
-
-        if [ -d  "$PACKAGE_INSTALL_ROOT/sbin" ] ; then
-            PATH="$PACKAGE_INSTALL_ROOT/sbin:$PATH"
-        fi
-
-        if [ -d          "$PACKAGE_INSTALL_ROOT/share/aclocal" ] ; then
-            ACLOCAL_PATH="$PACKAGE_INSTALL_ROOT/share/aclocal:$ACLOCAL_PATH"
-        fi
-
-        export CPPFLAGS
-        export LDFLAGS
-        export PATH
-        export ACLOCAL_PATH
-
-        pwd
-        exec "$@"
         ;;
     *)  abort 1 "unrecognized argument: $1"
 esac
