@@ -512,13 +512,8 @@ inspect_install_arguments() {
 
     #########################################################################################
 
-    if [ "$DEBUG_CC" = 1 ] ; then
-        CC_ARGS="$CC_ARGS -v"
-    fi
-
-    if [ "$DEBUG_LD" = 1 ] ; then
-         LD_ARGS="$LD_ARGS -Wl,-v"
-    fi
+    [ "$DEBUG_CC" = 1 ] && CC_ARGS="$CC_ARGS -v"
+    [ "$DEBUG_LD" = 1 ] && LD_ARGS="$LD_ARGS -Wl,-v"
 
     case $PROFILE in
         debug)
@@ -838,24 +833,24 @@ package_info_libz() {
 package_info_libbz2() {
     PACKAGE_SRC_URL='https://github.com/leleliu008/bzip2/archive/refs/tags/1.0.8@2.tar.gz'
     PACKAGE_SRC_SHA='13337d86c271b8e6f9cf4ea0b6fd6a1cd06b9b75c31fb4781ffbfcc6982c1bf0'
-    PACKAGE_INSTALL='cmakew -DINSTALL_EXECUTABLES=OFF -DINSTALL_LIBRARIES=ON -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF'
+    PACKAGE_INSTALL='cmakew'
 }
 
 package_info_libpcre2() {
-    PACKAGE_SRC_URL='https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.bz2'
-    PACKAGE_SRC_SHA='8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840'
+    PACKAGE_SRC_URL='https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.bz2'
+    PACKAGE_SRC_SHA='d34f02e113cf7193a1ebf2770d3ac527088d485d4e047ed10e5d217c6ef5de96'
     PACKAGE_INSTALL='cmakew -DCMAKE_C_STANDARD=99 -DCMAKE_C_STANDARD_REQUIRED=ON -DPCRE2_BUILD_PCRE2_8=ON -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_BUILD_PCRE2GREP=OFF -DPCRE2_BUILD_TESTS=OFF -DPCRE2_DEBUG=OFF -DPCRE2_SUPPORT_VALGRIND=OFF -DPCRE2_SUPPORT_UNICODE=ON'
 }
 
 package_info_libexpat() {
-    PACKAGE_SRC_URL='https://github.com/libexpat/libexpat/releases/download/R_2_5_0/expat-2.5.0.tar.xz'
-    PACKAGE_SRC_SHA='ef2420f0232c087801abf705e89ae65f6257df6b7931d37846a193ef2e8cdcbe'
+    PACKAGE_SRC_URL='https://github.com/libexpat/libexpat/releases/download/R_2_6_3/expat-2.6.3.tar.xz'
+    PACKAGE_SRC_SHA='274db254a6979bde5aad404763a704956940e465843f2a9bd9ed7af22e2c0efc'
     PACKAGE_INSTALL='cmakew -DEXPAT_BUILD_DOCS=OFF -DEXPAT_BUILD_TESTS=OFF -DEXPAT_BUILD_FUZZERS=OFF -DEXPAT_BUILD_EXAMPLES=OFF -DEXPAT_BUILD_TOOLS=OFF'
 }
 
 package_info_liblzma() {
-    PACKAGE_SRC_URL='https://mirrors.aliyun.com/macports/distfiles/xz/xz-5.4.6.tar.bz2'
-    PACKAGE_SRC_SHA='913851b274e8e1d31781ec949f1c23e8dbcf0ecf6e73a2436dc21769dd3e6f49'
+    PACKAGE_SRC_URL='https://github.com/tukaani-project/xz/releases/download/v5.6.3/xz-5.6.3.tar.gz'
+    PACKAGE_SRC_SHA='b1d45295d3f71f25a4c9101bd7c8d16cb56348bbef3bbc738da0351e17c73317'
     PACKAGE_INSTALL='configure --disable-dependency-tracking --enable-static --disable-shared --disable-nls --enable-largefile --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-lzma-links --disable-scripts --disable-doc'
 }
 
@@ -866,8 +861,8 @@ package_info_libgdbm() {
 }
 
 package_info_libsqlite3() {
-    PACKAGE_SRC_URL='https://www.sqlite.org/2024/sqlite-autoconf-3460000.tar.gz'
-    PACKAGE_SRC_SHA='6f8e6a7b335273748816f9b3b62bbdc372a889de8782d7f048c653a447417a7d'
+    PACKAGE_SRC_URL='https://www.sqlite.org/2024/sqlite-autoconf-3460100.tar.gz'
+    PACKAGE_SRC_SHA='67d3fe6d268e6eaddcae3727fce58fcc8e9c53869bdd07a0c61e38ddf2965071'
     PACKAGE_DEP_PKG='libz'
     PACKAGE_INSTALL='configure --disable-dependency-tracking --enable-static --disable-shared --enable-largefile --disable-editline --disable-readline'
 }
@@ -970,8 +965,8 @@ package_info_ruby() {
 }
 
 package_info_python3() {
-    PACKAGE_SRC_URL='https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz'
-    PACKAGE_SRC_SHA='e7de3240a8bc2b1e1ba5c81bf943f06861ff494b69fda990ce2722a504c6153d'
+    PACKAGE_SRC_URL='https://www.python.org/ftp/python/3.11.10/Python-3.11.10.tgz'
+    PACKAGE_SRC_SHA='92f2faf242681bfa406d53a51e17d42c5373affe23a130cd9697e132ef574706'
     PACKAGE_DEP_PKG='libz libbz2 liblzma libgdbm libexpat libsqlite3 libffi libopenssl perl'
     PACKAGE_INSTALL='configure --with-system-expat --with-system-ffi --with-openssl=$PACKAGE_INSTALL_DIR --with-ensurepip=yes --with-lto --enable-ipv6 --enable-shared --enable-largefile --disable-option-checking --disable-nls --disable-debug --enable-loadable-sqlite-extensions --disable-profiling'
     PACKAGE_DOPATCH='
@@ -1171,6 +1166,7 @@ EOF
      AR='$AR'
  RANLIB='$RANLIB'
 SYSROOT='$SYSROOT'
+PROFILE='$PROFILE'
  CFLAGS='$CFLAGS'
 LDFLAGS='$LDFLAGS'
 EOF
