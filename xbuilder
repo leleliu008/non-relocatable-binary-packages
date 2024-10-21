@@ -400,19 +400,19 @@ inspect_install_arguments() {
 
     #########################################################################################
 
-    NATIVE_OS_KIND="$(uname -s | tr A-Z a-z)"
-    NATIVE_OS_ARCH="$(uname -m)"
+    NATIVE_PLATFORM_KIND="$(uname -s | tr A-Z a-z)"
+    NATIVE_PLATFORM_ARCH="$(uname -m)"
 
     #########################################################################################
 
     if [ -z "$BUILD_NJOBS" ] ; then
-        if [ "$NATIVE_OS_KIND" = 'darwin' ] ; then
-            NATIVE_OS_NCPU="$(sysctl -n machdep.cpu.thread_count)"
+        if [ "$NATIVE_PLATFORM_KIND" = 'darwin' ] ; then
+            NATIVE_PLATFORM_NCPU="$(sysctl -n machdep.cpu.thread_count)"
         else
-            NATIVE_OS_NCPU="$(nproc)"
+            NATIVE_PLATFORM_NCPU="$(nproc)"
         fi
 
-        BUILD_NJOBS="$NATIVE_OS_NCPU"
+        BUILD_NJOBS="$NATIVE_PLATFORM_NCPU"
     fi
 
     #########################################################################################
@@ -442,7 +442,7 @@ inspect_install_arguments() {
     unset PP_ARGS
     unset LD_ARGS
 
-    if [ "$NATIVE_OS_KIND" = 'darwin' ] ; then
+    if [ "$NATIVE_PLATFORM_KIND" = 'darwin' ] ; then
         [ -z "$CC"      ] &&      CC="$(xcrun --sdk macosx --find clang)"
         [ -z "$CXX"     ] &&     CXX="$(xcrun --sdk macosx --find clang++)"
         [ -z "$AS"      ] &&      AS="$(xcrun --sdk macosx --find as)"
@@ -451,11 +451,11 @@ inspect_install_arguments() {
         [ -z "$RANLIB"  ] &&  RANLIB="$(xcrun --sdk macosx --find ranlib)"
         [ -z "$SYSROOT" ] && SYSROOT="$(xcrun --sdk macosx --show-sdk-path)"
 
-        NATIVE_OS_VERS="$(sw_vers -productVersion)"
+        [ -z "$MACOSX_DEPLOYMENT_TARGET" ] && MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion)"
 
-        CC_ARGS="-isysroot $SYSROOT -mmacosx-version-min=$NATIVE_OS_VERS -arch $NATIVE_OS_ARCH -Qunused-arguments"
+        CC_ARGS="-isysroot $SYSROOT -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET -arch $NATIVE_PLATFORM_ARCH -Qunused-arguments"
         PP_ARGS="-isysroot $SYSROOT -Qunused-arguments"
-        LD_ARGS="-isysroot $SYSROOT -mmacosx-version-min=$NATIVE_OS_VERS -arch $NATIVE_OS_ARCH"
+        LD_ARGS="-isysroot $SYSROOT -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET -arch $NATIVE_PLATFORM_ARCH"
     else
         [ -z "$CC" ] && {
              CC="$(command -v cc  || command -v clang   || command -v gcc)" || abort 1 "C Compiler not found."
@@ -507,14 +507,14 @@ inspect_install_arguments() {
                 LD_ARGS="$LD_ARGS -flto"
             fi
 
-            if [ "$NATIVE_OS_KIND" = darwin ] ; then
+            if [ "$NATIVE_PLATFORM_KIND" = darwin ] ; then
                 LD_ARGS="$LD_ARGS -Wl,-S"
             else
                 LD_ARGS="$LD_ARGS -Wl,-s"
             fi
     esac
 
-    case $NATIVE_OS_KIND in
+    case $NATIVE_PLATFORM_KIND in
          netbsd) LD_ARGS="$LD_ARGS -lpthread" ;;
         openbsd) LD_ARGS="$LD_ARGS -lpthread" ;;
     esac
