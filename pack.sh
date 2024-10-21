@@ -16,7 +16,7 @@ run() {
 }
 
 __setup_freebsd() {
-    run $sudo pkg install -y coreutils cmake gmake gcc pkgconf
+    run $sudo pkg install -y coreutils gmake gcc
 
     run $sudo ln -sf /usr/local/bin/gln        /usr/bin/ln
     run $sudo ln -sf /usr/local/bin/gmake      /usr/bin/make
@@ -31,7 +31,7 @@ __setup_freebsd() {
 }
 
 __setup_openbsd() {
-    run $sudo pkg_add coreutils cmake gmake gcc%11 pkgconf libarchive
+    run $sudo pkg_add coreutils gmake gcc%11 libarchive
 
     run $sudo ln -sf /usr/local/bin/gln        /usr/bin/ln
     run $sudo ln -sf /usr/local/bin/gmake      /usr/bin/make
@@ -47,7 +47,7 @@ __setup_openbsd() {
 
 __setup_netbsd() {
     run $sudo pkgin -y update
-    run $sudo pkgin -y install coreutils cmake gmake pkg-config bsdtar
+    run $sudo pkgin -y install coreutils gmake bsdtar
 
     run $sudo ln -sf /usr/pkg/bin/gln        /usr/bin/ln
     run $sudo ln -sf /usr/pkg/bin/gmake      /usr/bin/make
@@ -71,12 +71,12 @@ __setup_linux() {
     case $ID in
         ubuntu)
             run $sudo apt-get -y update
-            run $sudo apt-get -y install curl libarchive-tools cmake make pkg-config g++ linux-headers-generic patchelf
+            run $sudo apt-get -y install curl libarchive-tools make g++ linux-headers-generic patchelf
             run $sudo ln -sf /usr/bin/make /usr/bin/gmake
             ;;
         alpine)
             run $sudo apk update
-            run $sudo apk add cmake make pkgconf g++ linux-headers libarchive-tools
+            run $sudo apk add make g++ linux-headers libarchive-tools
     esac
 }
 
@@ -90,18 +90,12 @@ __setup_${2%%-*}
 
 [ -f cacert.pem ] && run export SSL_CERT_FILE="$PWD/cacert.pem"
 
-case $2 in
-    openbsd-7.[0-4]-amd64)
-        PKG='' ;;
-    *)  PKG='python3'
-esac
-
 XXXXXX="non-relocatable-binary-packages-$1-$2"
 PREFIX="/opt/$XXXXXX"
 
 run $sudo install -d -g `id -g -n` -o `id -u -n` "$PREFIX"
 
-run ./xbuilder install automake libtool texinfo help2man intltool swig $PKG --prefix="$PREFIX"
+run ./xbuilder install automake libtool texinfo help2man intltool --prefix="$PREFIX"
 
 case $2 in
     linux-glibc-*)
