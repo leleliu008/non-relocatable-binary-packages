@@ -406,7 +406,7 @@ inspect_install_arguments() {
     #########################################################################################
 
     if [ -z "$BUILD_NJOBS" ] ; then
-        if [ "$NATIVE_PLATFORM_KIND" = 'darwin' ] ; then
+        if [ "$NATIVE_PLATFORM_KIND" = darwin ] ; then
             NATIVE_PLATFORM_NCPU="$(sysctl -n machdep.cpu.thread_count)"
         else
             NATIVE_PLATFORM_NCPU="$(nproc)"
@@ -442,7 +442,7 @@ inspect_install_arguments() {
     unset PP_ARGS
     unset LD_ARGS
 
-    if [ "$NATIVE_PLATFORM_KIND" = 'darwin' ] ; then
+    if [ "$NATIVE_PLATFORM_KIND" = darwin ] ; then
         [ -z "$CC"      ] &&      CC="$(xcrun --sdk macosx --find clang)"
         [ -z "$CXX"     ] &&     CXX="$(xcrun --sdk macosx --find clang++)"
         [ -z "$AS"      ] &&      AS="$(xcrun --sdk macosx --find as)"
