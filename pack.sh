@@ -15,6 +15,10 @@ run() {
     eval "$@"
 }
 
+__setup_dragonflybsd() {
+__setup_freebsd
+}
+
 __setup_freebsd() {
     run $sudo pkg install -y coreutils gmake gcc
 
@@ -95,7 +99,7 @@ PREFIX="/opt/$XXXXXX"
 
 run $sudo install -d -g `id -g -n` -o `id -u -n` "$PREFIX"
 
-run ./xbuilder install automake libtool texinfo help2man intltool --prefix="$PREFIX"
+run ./xbuilder install automake libtool texinfo help2man intltool swig --prefix="$PREFIX"
 
 case $2 in
     linux-glibc-*)

@@ -771,6 +771,23 @@ run ln -s libtoolize bin/glibtoolize
 '
 }
 
+package_info_libpcre2() {
+    PACKAGE_SRC_URL='https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.bz2'
+    PACKAGE_SRC_SHA='d34f02e113cf7193a1ebf2770d3ac527088d485d4e047ed10e5d217c6ef5de96'
+    PACKAGE_INSTALL='configure --enable-static --disable-shared --enable-largefile --enable-pcre2-16 --enable-pcre2-32 --disable-pcre2grep-libz --disable-pcre2grep-libbz2 --enable-jit --disable-pcre2test-libedit --disable-pcre2test-libreadline --disable-debug --disable-fuzz-support --disable-valgrind'
+}
+
+package_info_swig() {
+    PACKAGE_SRC_URL='https://downloads.sourceforge.net/project/swig/swig/swig-4.1.1/swig-4.1.1.tar.gz'
+    PACKAGE_SRC_SHA='2af08aced8fcd65cdb5cc62426768914bedc735b1c250325203716f78e39ac9b'
+    PACKAGE_DEP_PKG='libpcre2'
+    PACKAGE_INSTALL='configure --enable-ccache --enable-cpp11-testing --with-popen --with-pcre --without-boost --without-android --without-java --without-javascript --without-python --without-perl5 --without-ruby --without-php --without-tcl --without-guile --without-octave --without-scilab --without-ocaml --without-mzscheme --without-csharp --without-lua --without-r --without-d --without-go'
+
+    if [ "$NATIVE_OS_KIND" != darwin ] ; then
+        PACKAGE_DOPATCH='export LDFLAGS="$LDFLAGS -static-libstdc++ -static-libgcc"'
+    fi
+}
+
 help() {
     printf '%b\n' "\
 ${COLOR_GREEN}A package builder to build non-relocatable packages such as automake, autoconf, libtool, etc.${COLOR_OFF}

@@ -42,6 +42,35 @@ jobs:
       if-new-release:  ${{ steps.check-if-build.outputs.RELEASE }}
       release-version: ${{ steps.check-if-build.outputs.RELEASE_VERSION }}
 
+
+  dragonflybsd:
+    needs: check
+    if: needs.check.outputs.if-new-release == 'yes'
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target-version: ['6.4']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: vmactions/dragonflybsd-vm@v1
+        with:
+          release: "${{ matrix.target-version }}.0"
+          usesh: true
+          sync: rsync
+          copyback: true
+          run: ./pack.sh ${{ needs.check.outputs.release-version }} dragonflybsd-${{ matrix.target-version }}-x86_64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: non-relocatable-binary-packages-${{ needs.check.outputs.release-version }}-dragonflybsd-${{ matrix.target-version }}-x86_64.tar.xz
+          path: non-relocatable-binary-packages-${{ needs.check.outputs.release-version }}-dragonflybsd-${{ matrix.target-version }}-x86_64.tar.xz
+
+
   freebsd:
     needs: check
     if: needs.check.outputs.if-new-release == 'yes'
@@ -51,7 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target-version: ['14.1', '14.0', '13.3', '13.2']
+        target-version: ['14.1', '14.0', '13.4', '13.3', '13.2']
 
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +107,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target-version: ['7.5', '7.4', '7.3', '7.2']
+        target-version: ['7.6', '7.5', '7.4', '7.3', '7.2']
 
     steps:
       - uses: actions/checkout@v4
@@ -267,7 +296,7 @@ jobs:
 
 
   publish:
-    needs: [check, freebsd, openbsd, netbsd, macos-arm64, macos-x86_64, linux-glibc, linux-musl]
+    needs: [check, dragonflybsd, freebsd, openbsd, netbsd, macos-arm64, macos-x86_64, linux-glibc, linux-musl]
     if: needs.check.outputs.if-new-release == 'yes'
 
     runs-on: ubuntu-latest
