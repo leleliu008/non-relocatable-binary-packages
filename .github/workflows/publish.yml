@@ -305,6 +305,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           pattern: '*'
@@ -326,27 +328,7 @@ jobs:
           ## included softwares
 
           \`\`\`yaml
-          EOF
-
-          tar xf non-relocatable-binary-packages-${{ needs.check.outputs.release-version }}-linux-glibc-x86_64.tar.xz
-
-          for fp in opt/non-relocatable-binary-packages-${{ needs.check.outputs.release-version }}-linux-glibc-x86_64/*.yml
-          do
-              fn=${fp##*/}
-              PKGNAME=${fn%.yml}
-
-              SRC_URL="$(sed -n '/^src-url: /p' "$fp")"
-              SRC_SHA="$(sed -n '/^src-sha: /p' "$fp")"
-
-              cat >> notes.md <<EOF
-
-          $PKGNAME:
-              $SRC_URL
-              $SRC_SHA
-          EOF
-          done
-
-          cat >> notes.md <<EOF
+          $(./xbuilder ls-available -v)
           \`\`\`
 
           ## sha256sum
@@ -356,10 +338,4 @@ jobs:
           \`\`\`
           EOF
 
-          # to avaid: failed to run git: fatal: not a git repository (or any of the parent directories): .git
-          git -c init.defaultBranch=master init
-          git remote add origin ${{ github.repositoryUrl }}
-
-          TAGNAME=${{ needs.check.outputs.release-version }}
-
-          gh release create "$TAGNAME" *.tar.xz --title "$TAGNAME" --notes-file notes.md
+      - run: gh release create ${{ needs.check.outputs.release-version }} *.tar.xz --title ${{ needs.check.outputs.release-version }} --notes-file notes.md

@@ -870,7 +870,7 @@ case $1 in
         printf '%s\n' "$XBUILDER_VERSION"
         ;;
     ls-available)
-        PACKAGE_NAMES='gm4 perl autoconf automake texinfo help2man libtool libexpat perl_XML_Parser intltool'
+        PACKAGE_NAMES='gm4 perl autoconf automake texinfo help2man libtool libexpat perl_XML_Parser intltool libpcre2 swig'
 
         if [ "$2" = -v ] ; then
             for PACKAGE_NAME in $PACKAGE_NAMES
