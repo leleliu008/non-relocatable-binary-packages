@@ -758,7 +758,11 @@ run export EXPATLIBPATH="$PACKAGE_INSTALL_DIR/lib"
 run export EXPATINCPATH="$PACKAGE_INSTALL_DIR/include"
 run gsed -i "\"/check_lib/a not_execute,\"" Makefile.PL
 '
-    PACKAGE_INSTALL='run perl Makefile.PL LDDLFLAGS="\"-shared -Wl,-rpath,$PACKAGE_INSTALL_DIR/lib\"" && run "$GMAKE" "--jobs=$BUILD_NJOBS" && run "$GMAKE" install'
+    if [ "$NATIVE_PLATFORM_KIND" = darwin ] ; then
+        PACKAGE_INSTALL='run perl Makefile.PL && run "$GMAKE" "--jobs=$BUILD_NJOBS" && run "$GMAKE" install'
+    else
+        PACKAGE_INSTALL='run perl Makefile.PL LDDLFLAGS="\"-shared -Wl,-rpath,$PACKAGE_INSTALL_DIR/lib\"" && run "$GMAKE" "--jobs=$BUILD_NJOBS" && run "$GMAKE" install'
+    fi
 }
 
 package_info_intltool() {
