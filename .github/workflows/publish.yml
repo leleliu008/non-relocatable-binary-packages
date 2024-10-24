@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: cross-platform-actions/action@v0.25.0
+      - uses: cross-platform-actions/action@master
         with:
           operating_system: freebsd
           version: ${{ matrix.target-version }}
@@ -112,7 +112,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: cross-platform-actions/action@v0.25.0
+      - uses: cross-platform-actions/action@master
         with:
           operating_system: openbsd
           version: ${{ matrix.target-version }}

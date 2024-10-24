@@ -20,7 +20,7 @@ __setup_freebsd
 }
 
 __setup_freebsd() {
-    run $sudo pkg install -y coreutils gmake gcc
+    run $sudo pkg install -y curl libnghttp2 coreutils gmake gcc
 
     run $sudo ln -sf /usr/local/bin/gln        /usr/bin/ln
     run $sudo ln -sf /usr/local/bin/gmake      /usr/bin/make
