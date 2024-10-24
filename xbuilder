@@ -743,13 +743,22 @@ package_info_libexpat() {
     PACKAGE_INSTALL='configure --disable-dependency-tracking --enable-static --enable-shared --without-xmlwf --without-tests --without-examples --without-docbook'
 }
 
+package_info_gsed() {
+    PACKAGE_SRC_URL='https://ftp.gnu.org/gnu/sed/sed-4.9.tar.xz'
+    PACKAGE_SRC_SHA='6e226b732e1cd739464ad6862bd1a1aba42d7982922da7a53519631d24975181'
+    PACKAGE_INSTALL='configure --program-prefix=g --with-included-regex --without-selinux --disable-acl --disable-assert'
+}
+
 package_info_perl_XML_Parser() {
     PACKAGE_SRC_URL='https://cpan.metacpan.org/authors/id/T/TO/TODDR/XML-Parser-2.47.tar.gz'
     PACKAGE_SRC_SHA='ad4aae643ec784f489b956abe952432871a622d4e2b5c619e8855accbfc4d1d8'
-    PACKAGE_DEP_PKG='perl libexpat'
+    PACKAGE_DEP_PKG='gsed perl libexpat'
     PACKAGE_DOPATCH='
 run export EXPATLIBPATH="$PACKAGE_INSTALL_DIR/lib"
 run export EXPATINCPATH="$PACKAGE_INSTALL_DIR/include"
+
+run gsed -i "/check_lib/a not_execute," Makefile.PL
+run gsed -i "s/-lexpat/-Wl,--whole-archive libexpat.a -Wl,--no-whole-archive" Expat/Makefile.PL
 '
     PACKAGE_INSTALL='run perl Makefile.PL && run "$GMAKE" "--jobs=$BUILD_NJOBS" && run "$GMAKE" install'
 }
