@@ -903,7 +903,7 @@ EOF
 
         for PACKAGE_NAME in $SPECIFIED_PACKAGE_LIST
         do
-            install_the_given_package "$PACKAGE_NAME"
+            (install_the_given_package "$PACKAGE_NAME")
         done
 
         cat > "$PACKAGE_INSTALL_DIR/toolchain.txt" <<EOF
