@@ -783,7 +783,7 @@ package_info_swig() {
     PACKAGE_DEP_PKG='libpcre2'
     PACKAGE_INSTALL='configure --enable-ccache --enable-cpp11-testing --with-popen --with-pcre --without-boost --without-android --without-java --without-javascript --without-python --without-perl5 --without-ruby --without-php --without-tcl --without-guile --without-octave --without-scilab --without-ocaml --without-mzscheme --without-csharp --without-lua --without-r --without-d --without-go'
 
-    if [ "$NATIVE_OS_KIND" != darwin ] ; then
+    if [ "$NATIVE_PLATFORM_KIND" != darwin ] ; then
         PACKAGE_DOPATCH='export LDFLAGS="$LDFLAGS -static-libstdc++ -static-libgcc"'
     fi
 }
