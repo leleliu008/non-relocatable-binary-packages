@@ -782,21 +782,11 @@ run ln -s libtoolize bin/glibtoolize
 '
 }
 
-package_info_libpcre2() {
-    PACKAGE_SRC_URL='https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.bz2'
-    PACKAGE_SRC_SHA='d34f02e113cf7193a1ebf2770d3ac527088d485d4e047ed10e5d217c6ef5de96'
-    PACKAGE_INSTALL='configure --enable-static --disable-shared --enable-largefile --enable-pcre2-16 --enable-pcre2-32 --disable-pcre2grep-libz --disable-pcre2grep-libbz2 --enable-jit --disable-pcre2test-libedit --disable-pcre2test-libreadline --disable-debug --disable-fuzz-support --disable-valgrind'
-}
-
-package_info_swig() {
-    PACKAGE_SRC_URL='https://downloads.sourceforge.net/project/swig/swig/swig-4.1.1/swig-4.1.1.tar.gz'
-    PACKAGE_SRC_SHA='2af08aced8fcd65cdb5cc62426768914bedc735b1c250325203716f78e39ac9b'
-    PACKAGE_DEP_PKG='libpcre2'
-    PACKAGE_INSTALL='configure --enable-ccache --enable-cpp11-testing --with-popen --with-pcre --without-boost --without-android --without-java --without-javascript --without-python --without-perl5 --without-ruby --without-php --without-tcl --without-guile --without-octave --without-scilab --without-ocaml --without-mzscheme --without-csharp --without-lua --without-r --without-d --without-go'
-
-    if [ "$NATIVE_PLATFORM_KIND" != darwin ] ; then
-        PACKAGE_DOPATCH='export LDFLAGS="$LDFLAGS -static-libstdc++ -static-libgcc"'
-    fi
+package_info_pkgconf() {
+    PACKAGE_SRC_URL='https://distfiles.ariadne.space/pkgconf/pkgconf-2.3.0.tar.xz'
+    PACKAGE_SRC_SHA='3a9080ac51d03615e7c1910a0a2a8df08424892b5f13b0628a204d3fcce0ea8b'
+    PACKAGE_INSTALL='configure'
+    PACKAGE_DOTWEAK='run ln -s pkgconf bin/pkg-config'
 }
 
 help() {
@@ -881,7 +871,7 @@ case $1 in
         printf '%s\n' "$XBUILDER_VERSION"
         ;;
     ls-available)
-        PACKAGE_NAMES='gm4 perl autoconf automake texinfo help2man libtool libexpat perl_XML_Parser intltool libpcre2 swig'
+        PACKAGE_NAMES='gm4 perl autoconf automake texinfo help2man libtool libexpat perl_XML_Parser intltool pkgconf'
 
         if [ "$2" = -v ] ; then
             for PACKAGE_NAME in $PACKAGE_NAMES
