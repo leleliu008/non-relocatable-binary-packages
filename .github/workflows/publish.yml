@@ -162,7 +162,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target-version: ['10.15', '11.0', '12.0', '13.0', '14.0']
+        target-version: ['10.15', '11.0', '12.0', '13.0', '14.0', '15.0']
 
     env:
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.target-version }}
