@@ -328,7 +328,7 @@ jobs:
           ## included softwares
 
           \`\`\`yaml
-          $(./xbuilder ls-available -v)
+          $(./build.sh ls-available -v)
           \`\`\`
 
           ## sha256sum

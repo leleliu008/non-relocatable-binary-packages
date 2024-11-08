@@ -99,7 +99,9 @@ PREFIX="/opt/$XXXXXX"
 
 run $sudo install -d -g `id -g -n` -o `id -u -n` "$PREFIX"
 
-run ./xbuilder install automake libtool texinfo help2man intltool pkgconf --prefix="$PREFIX"
+run ./build.sh install automake libtool texinfo help2man intltool pkgconf --prefix="$PREFIX"
+
+run cp build.sh "$PREFIX/"
 
 case $2 in
     linux-glibc-*)
